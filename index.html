@@ -1535,6 +1535,22 @@ h1 em, h2 em, h3 em, h4 em {
   object-fit:cover;flex-shrink:0;
 }
 </style>
+<style>
+/* ===== Mobile polish: tone down background effects + fixes ===== */
+@media(max-width:768px){
+  /* Kill the flickering full-screen grain overlays (keep faint static texture) */
+  body::before, body::after{ animation:none !important; opacity:.01 !important; }
+  /* Calm the animated galaxy particle field */
+  #galaxyCanvas{ opacity:.55 !important; }
+  /* Soften large decorative glows */
+  .earth-glow, .hero-art-glow, .hero-art-glow2, .glow{ opacity:.55 !important; }
+  /* Hide the "In partnership with" badge that collides with the mobile nav */
+  .nav-partners{ display:none !important; }
+}
+@media(prefers-reduced-motion: reduce){
+  body::before, body::after{ animation:none !important; }
+}
+</style>
 </head>
 <body>
 
