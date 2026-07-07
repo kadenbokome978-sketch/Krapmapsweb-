@@ -1,0 +1,6 @@
+# KrapMaps short links  ->  redemption landing pages
+# Format:  <incoming path>   <destination>   <status>
+# 301 = permanent redirect (browser URL changes to the .html page)
+
+/r/mm-uluwatu      /redeem-uluwatu.html      301
+/r/mm-chiangmai    /redeem-chiangmai.html    301
