@@ -236,6 +236,22 @@ main{
   margin:2.5rem 0;
 }
 
+/* Partner groups (hostels vs travel insurance) */
+.partner-group + .partner-group{
+  margin-top:2.5rem;padding-top:2.5rem;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.partner-group-title{
+  font-family:var(--font-serif);
+  font-size:1.15rem;font-weight:700;letter-spacing:-.01em;
+  color:var(--fg);margin-bottom:1.1rem;
+  display:flex;align-items:center;gap:.65rem;
+}
+.partner-group-title::before{
+  content:'';width:22px;height:2px;border-radius:2px;flex-shrink:0;
+  background:linear-gradient(90deg,var(--pink),transparent);
+}
+
 /* =====================================================
    PARTNER CARDS
    ===================================================== */
@@ -566,7 +582,9 @@ h1 em, h2 em, h3 em, h4 em {
       <p>The hostels and travel brands helping nomads explore — and improve — the cities they pass through, from Southeast Asia and beyond.</p>
     </div>
 
-    <div class="partners-grid">
+    <div class="partner-group">
+      <h3 class="partner-group-title">Hostel Partnerships</h3>
+      <div class="partners-grid">
       <div class="partner-card">
         <div class="partner-type">Hostel Group · Thailand &amp; Bali</div>
         <div class="partner-name">Mad Monkey Hostels</div>
@@ -586,7 +604,12 @@ h1 em, h2 em, h3 em, h4 em {
           Thailand-wide
         </div>
       </div>
+      </div>
+    </div>
 
+    <div class="partner-group">
+      <h3 class="partner-group-title">Travel Insurance Partnerships</h3>
+      <div class="partners-grid">
       <a href="https://genki.world" target="_blank" rel="noopener" class="partner-card">
         <div class="partner-type">Travel Insurance · For Digital Nomads</div>
         <div class="partner-name">Genki</div>
@@ -596,6 +619,7 @@ h1 em, h2 em, h3 em, h4 em {
           Trusted by 400,000+ nomads
         </div>
       </a>
+      </div>
     </div>
   </div>
 
