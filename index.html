@@ -183,6 +183,23 @@ nav{
   transition:transform .2s,box-shadow .2s;
 }
 .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,255,255,.15);}
+/* Mobile page-title + hamburger nav */
+.nav-mobile-title{display:none;font-weight:700;font-size:1.0625rem;letter-spacing:.01em;color:var(--fg);}
+.nav-toggle{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;padding:0;margin:-4px -8px -4px 0;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.nav-toggle span{display:block;width:22px;height:2px;border-radius:2px;background:var(--fg);margin:0 auto;transition:transform .25s ease,opacity .2s ease;}
+.nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0;}
+.nav-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+@media(max-width:768px){
+  .nav-logo{display:none;}
+  .nav-mobile-title{display:block;}
+  .nav-toggle{display:flex;}
+  .nav-links{position:fixed;top:56px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;padding:.5rem var(--gutter) 1rem;background:rgba(4,4,12,0.92);backdrop-filter:var(--glass-blur-heavy);-webkit-backdrop-filter:var(--glass-blur-heavy);border-bottom:1px solid rgba(255,255,255,0.08);box-shadow:0 20px 40px rgba(0,0,0,0.45);transform:translateY(-8px);opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease;}
+  .nav-links.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .nav-link{font-size:1rem;padding:.85rem .25rem;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .nav-cta{text-align:center;margin-top:.75rem;padding:.75rem 1.125rem;font-size:.9375rem;}
+  .nav-cta:hover{transform:none;}
+}
 .nav-partners{
   display:flex;flex-direction:column;align-items:flex-start;gap:4px;
   margin-left:.875rem;padding-left:.875rem;
@@ -1133,7 +1150,7 @@ footer{
 }
 @media(max-width:768px){
   nav{padding:.75rem var(--gutter);}
-  .nav-link:not(.nav-cta){display:none;}
+  
   .hero{grid-template-columns:1fr;padding:calc(3.5rem + 52px) var(--gutter) 3rem;}
   .hero-content{max-width:100%;text-align:center;}
   .hero-content .eyebrow,.hero-sub{margin-left:auto;margin-right:auto;}
@@ -1573,7 +1590,11 @@ h1 em, h2 em, h3 em, h4 em {
   </div>
   </div>
   </div>
-  <div class="nav-links">
+  <span class="nav-mobile-title">KrapMaps</span>
+  <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="nav-links" id="navLinks">
     <a class="nav-link" href="partners.html">Partners</a>
     <a class="nav-link" href="#how">How It Works</a>
     
@@ -3377,6 +3398,31 @@ gsap.from('footer', {
   // Run once on load in case page is already scrolled
   applyParallax();
 
+})();
+</script>
+<script>
+(function(){
+  var toggle = document.querySelector('.nav-toggle');
+  var links  = document.getElementById('navLinks');
+  if(!toggle || !links) return;
+  function setOpen(open){
+    links.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  toggle.addEventListener('click', function(e){
+    e.stopPropagation();
+    setOpen(!links.classList.contains('open'));
+  });
+  links.addEventListener('click', function(e){
+    if(e.target.closest('.nav-link')) setOpen(false);
+  });
+  document.addEventListener('click', function(e){
+    if(links.classList.contains('open') && !e.target.closest('nav')) setOpen(false);
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') setOpen(false);
+  });
 })();
 </script>
 </body>
