@@ -629,19 +629,52 @@ h1 em, h2 em, h3 em, h4 em {
 }
 </style>
 <style>
-/* ===== Mobile polish: tone down background effects + fixes ===== */
-/* Never allow sideways scroll (decorative fixed glows/grain bleed past the viewport) */
-html,body{overflow-x:hidden;}
+/* ===== Mobile polish v2: scroll fix, calmer stars, nicer menu ===== */
+/* Clip sideways bleed WITHOUT breaking vertical scroll. overflow:hidden on
+   html+body locks touch-scrolling on iOS; overflow:clip clips without
+   creating a scroll container. */
+html,body{overflow-x:clip !important;}
 @media(max-width:768px){
-  /* Kill the flickering full-screen grain overlays (keep faint static texture) */
-  body::before, body::after{ animation:none !important; opacity:.01 !important; }
-  /* Calm the animated galaxy particle field */
-  #galaxyCanvas{ opacity:.55 !important; }
-  /* Soften large decorative glows */
-  .earth-glow, .hero-art-glow, .hero-art-glow2, .glow{ opacity:.55 !important; }
+  /* --- Calmer background: dim starfields, nebula glows and grain --- */
+  body::before, body::after{ animation:none !important; opacity:.008 !important; }
+  #galaxyCanvas, #space-canvas{ opacity:.3 !important; }
+  .cin-orb{ opacity:.38 !important; }
+  .earth-glow, .hero-art-glow, .hero-art-glow2, .glow{ opacity:.5 !important; }
   /* Hide the "In partnership with" badge that collides with the mobile nav */
   .nav-partners{ display:none !important; }
-  /* Comfortable footer link tap targets */
+
+  /* --- Nicer hamburger + dropdown menu --- */
+  .nav-toggle{ border-radius:10px; transition:background .2s; }
+  .nav-toggle[aria-expanded="true"]{ background:rgba(255,255,255,.06); }
+  .nav-toggle span{ width:24px; height:2px; border-radius:2px; }
+  .nav-links{
+    top:60px !important; left:12px !important; right:12px !important;
+    padding:.5rem !important; gap:.15rem !important;
+    border-radius:18px !important;
+    background:rgba(12,12,22,.975) !important;
+    border:1px solid rgba(255,255,255,.10) !important;
+    box-shadow:0 24px 64px rgba(0,0,0,.6) !important;
+  }
+  /* Dim backdrop behind the menu; taps pass through so it still closes */
+  .nav-links::before{
+    content:''; position:fixed; inset:0; z-index:-1;
+    background:rgba(4,4,12,.55);
+    opacity:0; pointer-events:none; transition:opacity .22s ease;
+  }
+  .nav-links.open::before{ opacity:1; }
+  .nav-link{
+    font-size:1.02rem !important; font-weight:500 !important;
+    padding:.9rem 1rem !important; border-bottom:none !important;
+    border-radius:12px !important;
+  }
+  .nav-link:not(.nav-cta).active{ background:rgba(255,255,255,.07) !important; color:var(--fg) !important; }
+  .nav-cta{
+    margin:.4rem .15rem .15rem !important;
+    padding:.9rem 1rem !important; font-size:1rem !important;
+    border-radius:12px !important; text-align:center !important;
+  }
+
+  /* --- Comfortable footer link tap targets --- */
   .f-links{ gap:.35rem 1.1rem !important; }
   .f-links a{ padding:.6rem .45rem !important; font-size:.85rem !important; }
 }
