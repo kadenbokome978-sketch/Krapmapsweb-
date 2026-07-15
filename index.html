@@ -1609,6 +1609,14 @@ html,body{overflow-x:clip !important;}
   .eyebrow{ font-size:.8rem !important; letter-spacing:.1em !important; }
   .hero-sub{ font-size:.92rem !important; line-height:1.6 !important; }
   .page-hero h1,.support-hero h1,.terms-hero h1,.about-hero h1{ font-size:clamp(1.9rem,9vw,2.75rem) !important; }
+
+  /* --- Performance: drop GPU-heavy effects on mobile (reduces lag) --- */
+  #galaxyCanvas, #space-canvas{ display:none !important; }
+  .cin-orb{ display:none !important; }
+  nav, .glass-card, .nav-links, .how-viewport{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+  nav{ background:rgba(6,6,14,.9) !important; }
+  .hero-badge, .earth-glow, .hero-art-glow, .hero-art-glow2, .glow,
+  [class*="aurora"]{ animation:none !important; }
 }
 @media(prefers-reduced-motion: reduce){
   body::before, body::after{ animation:none !important; }
@@ -2590,7 +2598,7 @@ function dropPin(e) {
 }
 
 function tick() {
-  requestAnimationFrame(tick);
+  if (!window.matchMedia('(max-width:768px)').matches) requestAnimationFrame(tick);
   resizeCam();
   earthMat.uniforms.uTime.value += .008;
   cloudMat.uniforms.uTime.value += .008;
@@ -2923,6 +2931,7 @@ setInterval(() => {
 
 let sT = 0;
 (function drawSpace() {
+  if (window.matchMedia('(max-width:768px)').matches) { spaceCanvas.remove(); return; }
   sT += 0.016;
   const W = spaceCanvas.width, H = spaceCanvas.height;
   sCtx.clearRect(0,0,W,H);
@@ -3255,6 +3264,7 @@ gsap.from('footer', {
 (function(){
   const canvas = document.getElementById('galaxyCanvas');
   if (!canvas) return;
+  if (window.matchMedia('(max-width:768px)').matches) { canvas.remove(); return; }
   const ctx = canvas.getContext('2d');
 
   let W, H, stars, nebulae, dustClouds;
