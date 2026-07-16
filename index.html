@@ -2148,7 +2148,7 @@ const heroEarth = document.getElementById('heroEarth');
 const binNumEl = document.getElementById('binNum');
 const ptsNumEl = document.getElementById('ptsNum');
 
-if (typeof THREE !== 'undefined') { try {
+if (typeof THREE !== 'undefined' && !window.matchMedia('(max-width:768px)').matches) { try {
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(45, 1, .1, 100);
 cam.position.z = 3.0;
@@ -3254,7 +3254,7 @@ gsap.from('footer', {
     }
     requestAnimationFrame(loop);
   }
-  requestAnimationFrame(loop);
+  if (!window.matchMedia('(max-width:768px)').matches) requestAnimationFrame(loop);
 
 })();
 
