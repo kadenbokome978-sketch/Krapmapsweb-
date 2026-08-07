@@ -1,16 +1,18 @@
 # Hermes Architecture
 
 **Component:** Hermes — Chief of Staff, NEXUS AI Operating System
-**Status:** FROZEN (v1.0)
+**Status:** FROZEN (v1.1)
 **Process stage:** Design → Review → Freeze (complete)
 **Scope of this document:** Architecture only. No implementation.
+**Related documents:** `HERMES_PROTOCOL.md`, `HERMES_STATE_MACHINE.md`,
+`HERMES_PROMPT.md` — see §11.
 
 ---
 
 ## 0. Position in NEXUS
 
-NEXUS is composed of a CEO layer, a Chief of Staff layer (Hermes), and six
-operating departments:
+NEXUS is composed of a CEO layer, an **Executive Office** layer (of which
+Hermes is one component), and six operating departments:
 
 ```
                     ┌─────────────┐
@@ -18,12 +20,20 @@ operating departments:
                     └──────┬──────┘
                            │ intent / directives
                            ▼
-                    ┌─────────────┐
-                    │   HERMES    │   Chief of Staff — coordination layer
-                    └──────┬──────┘
-                           │ assignments / monitoring / reporting
-        ┌─────────┬────────┼────────┬─────────┬─────────┐
-        ▼         ▼        ▼        ▼         ▼         ▼
+                 ┌───────────────────────┐
+                 │    EXECUTIVE OFFICE    │
+                 │                        │
+                 │  ┌──────────────────┐  │
+                 │  │      HERMES      │  │  operational coordination
+                 │  │ (Chief of Staff)  │  │  — this document
+                 │  └──────────────────┘  │
+                 │   Briefing Engine       │  CEO-facing reporting
+                 │   Approval Queue        │  Tier B/C decision checkpoint
+                 │   Strategic Planning    │  goal → initiative shaping
+                 └───────────┬────────────┘
+                              │ assignments / monitoring / reporting
+        ┌─────────┬────────┬─┼──────┬─────────┬─────────┐
+        ▼         ▼        ▼ ▼      ▼         ▼         ▼
    Control    Workshop  Research   Radar   Treasury   Memory
    Centre                Centre
 ```
@@ -31,10 +41,42 @@ operating departments:
 **The CEO decides what matters. Hermes decides how it gets done and by
 whom. Departments decide how their own work gets executed.**
 
-Hermes sits directly beneath the CEO and directly above the six
+Hermes sits inside the Executive Office, directly above the six
 departments. It has no department of its own, owns no specialist
 capability, and produces no domain output itself. Its only product is
 **coordination**: turning CEO intent into tracked, executed, reported work.
+
+### 0.1 The Executive Office
+
+The Executive Office is a grouping of CEO-support functions, not an
+additional approval hop between the CEO and Hermes — Tier A coordination
+(§2) still flows without friction. It exists so that responsibilities
+Hermes was previously absorbing by default now have a proper home,
+each with a narrower job than Hermes's own:
+
+- **Hermes (Chief of Staff)** — the operational coordinator described in
+  this document: intent → tasks → departments → results.
+- **Briefing Engine** — consumes Hermes's raw task/status state and
+  composes it into CEO-consumable artifacts (the daily summary, on-demand
+  briefings). Hermes is a data source to it, not its operator; see §8.
+- **Approval Queue** — the durable store and workflow for Tier B/C items.
+  Hermes files escalations into it rather than tracking their resolution
+  lifecycle itself; CEO approve/reject/defer actions happen against the
+  queue and resolutions flow back to Hermes for execution. See §2, §6.
+- **Strategic Planning** — works with the CEO upstream of Hermes, turning
+  strategic goals into scoped initiatives and directives. Hermes receives
+  directives already scoped at the initiative level and decomposes them
+  into department-level tasks (§5); Strategic Planning does not decompose
+  into tasks, and Hermes does not set initiative-level scope.
+
+Control Centre remains a department — the live operational/visual
+dashboard for system state — distinct from Briefing Engine's curated,
+CEO-facing reporting. The two consume overlapping data but serve
+different audiences and update on different cadences (§8).
+
+This document defines **Hermes only**. Briefing Engine, Approval Queue,
+and Strategic Planning are positioned here for context; their own
+architecture is out of scope until each gets its own design pass.
 
 ---
 
@@ -120,9 +162,13 @@ one message shape so it can be logged, replayed, and audited consistently.
 
 ### 3.2 Channels
 
-- **CEO ↔ Hermes:** directives down, reports and escalations up. This is
-  the only channel through which CEO intent enters the system and through
-  which system state reaches the CEO.
+- **CEO ↔ Hermes:** directives down (either directly from the CEO or
+  scoped by Strategic Planning, §0.1 — Hermes treats both as equally
+  authoritative), status/results up. Escalations route through the
+  Approval Queue rather than as ad hoc CEO messages, and CEO-facing
+  reporting is composed by the Briefing Engine rather than sent by Hermes
+  directly (§8) — but Hermes remains the only source of the underlying
+  operational state both of those consume.
 - **Hermes ↔ Department (lead agent per department):** task assignment
   down, status/result up. Hermes never messages a department's internal
   sub-agents directly — it addresses the department's lead/coordinating
@@ -233,7 +279,7 @@ the lower level can't resolve it:
 | **Task** | A single task errors or times out | Hermes retries once per department-declared retry policy; if it fails again, mark blocked and escalate (Tier B) |
 | **Agent** | Department agent unresponsive / degraded (§4) | Hermes pauses routing to that agent, re-routes queued (not yet started) tasks if an alternate capable department exists, escalates the agent health issue |
 | **Cross-department** | Two departments produce conflicting results for a shared task | Hermes does not pick a winner; it packages both results with context and escalates to CEO (Tier B/C depending on stakes) |
-| **Systemic** | Multiple departments degraded, or Hermes itself cannot reach the CEO channel | Hermes freezes new task assignment, preserves all in-flight state, and surfaces a system-health alert through every available channel |
+| **Systemic** | Multiple departments degraded, or Hermes itself cannot reach the Executive Office / CEO channel | Hermes freezes new task assignment, preserves all in-flight state, and surfaces a system-health alert through every available channel |
 
 **Principles:**
 
@@ -290,27 +336,34 @@ function operating under CEO-set limits.
 
 ## 8. Dashboard Integration
 
-Hermes is the primary data source for the CEO-facing NEXUS dashboard's
-operational view. It does not render the dashboard — it supplies the
-state the dashboard renders.
+Hermes is the primary data source for NEXUS's operational state. It does
+not render any dashboard or briefing itself — it supplies the state that
+Control Centre (live dashboard) and the Briefing Engine (curated CEO
+reporting) each consume for their own purpose.
 
 **Hermes publishes:**
 
 - **System status board** — per-department state (active/idle/degraded),
-  current load, open task count.
+  current load, open task count. (Rendered live by Control Centre.)
 - **Task pipeline view** — tasks by stage (intake → routed → in progress →
-  blocked → done), consistent with the model in §5.
-- **Escalation queue** — all open Tier B/C items awaiting CEO input, with
-  Hermes's recommendation attached to each.
-- **Standing daily summary** — completed work, in-flight work, blockers,
-  in CEO-digestible form (this is the same artifact referenced in §3.3).
+  blocked → done), consistent with the model in §5. (Rendered live by
+  Control Centre.)
+- **Escalation feed** — open Tier B/C items as Hermes raises them, each
+  with Hermes's recommendation attached. Hermes publishes the feed; the
+  Approval Queue (§0.1) owns the item's persistent record and
+  approve/reject/defer lifecycle from that point on.
+- **Raw status/result stream** — the underlying data the Briefing Engine
+  composes into the standing daily summary and on-demand briefings
+  (§3.3). Hermes does not format this for CEO consumption; that curation
+  is the Briefing Engine's job.
 - **Health signals** — agent degradation events, retry exhaustion, missed
   heartbeats.
 
-**Design constraint:** the dashboard consumes Hermes's *reported* state,
-not live internal department telemetry — this keeps a single, consistent
-source of truth and avoids the dashboard needing direct integration with
-six separate departments individually.
+**Design constraint:** downstream consumers (Control Centre, Briefing
+Engine, Approval Queue) consume Hermes's *reported* state, not live
+internal department telemetry — this keeps a single, consistent source of
+truth and avoids each consumer needing direct integration with six
+separate departments individually.
 
 **Out of scope for v1:** Hermes does not provide predictive analytics,
 department performance scoring, or historical trend analysis on the
@@ -347,16 +400,20 @@ None of these are approved for implementation. They are recorded here so
 future design work has a stated direction and doesn't silently drift from
 what v1 intentionally deferred.
 
+Also deferred: full architecture passes for Briefing Engine, Approval
+Queue, and Strategic Planning (§0.1). They are scoped only as far as
+needed to place Hermes correctly among them.
+
 ---
 
 ## 10. Review & Freeze Log
 
-**Design pass:** Sections 1–9 drafted to define Hermes as a pure
+**Design pass (v1.0):** Sections 1–9 drafted to define Hermes as a pure
 coordination layer — no domain execution capability, bounded decision
 tiers, single communication hub, department-agnostic lifecycle and
 delegation model.
 
-**Review pass (self-check against stated constraints):**
+**Review pass (v1.0 self-check against stated constraints):**
 
 - ✅ Hermes never appears as a decision-maker on strategy/goals (Tier C
   reserved for CEO throughout).
@@ -368,6 +425,43 @@ delegation model.
 - ✅ No implementation detail (tech stack, storage, transport) specified
   anywhere in this document — architecture only, as scoped.
 
-**Freeze:** This document is frozen as v1.0. Any change to Tiers,
-permission boundaries, or the department list requires a new revision,
-not an in-place edit.
+**Revision pass (v1.1):** introduced the Executive Office (§0, §0.1) as
+Hermes's home, giving reporting curation (Briefing Engine), decision
+checkpointing (Approval Queue), and goal-to-initiative shaping (Strategic
+Planning) their own places instead of leaving them implicit inside
+Hermes. Hermes's own responsibilities, tiers, lifecycle, delegation model,
+and permission model (§1–§7) are unchanged in substance — only §0, §3.2,
+§6, and §8 were touched to reflect where Hermes's output now flows.
+
+**Review pass (v1.1):**
+
+- ✅ Tier A coordination still requires no extra approval hop through the
+  Executive Office (§0.1) — the new layer is a grouping, not a gate.
+- ✅ Hermes's core loop (§5) is untouched; only downstream consumers of
+  its output changed.
+- ✅ No implementation detail introduced.
+
+**Freeze:** This document is frozen as v1.1. Any change to Tiers,
+permission boundaries, the department list, or the Executive Office
+grouping requires a new revision, not an in-place edit.
+
+---
+
+## 11. Companion Documents
+
+This document defines Hermes's architecture — its place in NEXUS, its
+authority, and its relationships. Three companion documents bring Hermes
+to the same documentation standard as the rest of NEXUS before any
+implementation begins:
+
+- **`HERMES_PROTOCOL.md`** — the concrete message protocol underlying §3:
+  full message-type catalog, channel matrix, and example flows.
+- **`HERMES_STATE_MACHINE.md`** — formal state machines for tasks (§5),
+  department agents (§4), and Approval Queue items (§0.1), with
+  transition tables.
+- **`HERMES_PROMPT.md`** — the behavioral specification an actual Hermes
+  agent implementation would be instructed with: identity, directives,
+  hard boundaries, and worked examples of correct vs. incorrect behavior.
+
+All three are design artifacts, consistent with this document's scope —
+none of them constitute implementation.
